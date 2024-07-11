@@ -1,0 +1,63 @@
+source activate ssast
+
+DATASETS=(esc-50 speech-commands)
+
+BATCH_SIZE=12
+TEMPERATURE=15
+LATENT_DIM=768
+EMBEDDINGS_DIM=768
+BACKBONE_NAME=patch-ssast
+PROJECTION_MATRIX=/scratch-shared/$USER/attn_proj_matrix.pth
+LAYER_PATH=backbone.v.blocks.11.attn.proj:attn_proj
+
+DATASET_CACHE_DIR=/scratch-shared/$USER/cache/
+OUTPUT_DIR=/scratch-shared/$USER/$DATASET/$BACKBONE_NAME
+
+for DATASET in "${DATASETS[@]}"; do
+    mkdir -p $OUTPUT_DIR
+
+    srun python $PWD/grads_supervised.py \
+        --seed 42 \
+        --cache-dir $DATASET_CACHE_DIR \
+        --temperature $TEMPERATURE \
+        --latent-dim $LATENT_DIM \
+        --use-fp16 \
+        --model $BACKBONE_NAME \
+        --batch-size $BATCH_SIZE \
+        --embeddings-dim $EMBEDDINGS_DIM \
+        --dataset $DATASET \
+        --dataset-split train \
+        --projection-matrix $PROJECTION_MATRIX \
+        --gradients-layers $LAYER_PATH \
+        --output-path $OUTPUT_DIR/kl-train.h5
+
+    srun python $PWD/grads_supervised.py \
+        --seed 42 \
+        --cache-dir $DATASET_CACHE_DIR \
+        --temperature $TEMPERATURE \
+        --latent-dim $LATENT_DIM \
+        --use-fp16 \
+        --model $BACKBONE_NAME \
+        --batch-size $BATCH_SIZE \
+        --embeddings-dim $EMBEDDINGS_DIM \
+        --dataset $DATASET \
+        --dataset-split test \
+        --projection-matrix $PROJECTION_MATRIX \
+        --gradients-layers $LAYER_PATH \
+        --output-path $OUTPUT_DIR/kl-test.h5
+
+    srun python $PWD/grads_supervised.py \
+        --seed 42 \
+        --cache-dir $DATASET_CACHE_DIR \
+        --temperature $TEMPERATURE \
+        --latent-dim $LATENT_DIM \
+        --use-fp16 \
+        --model $BACKBONE_NAME \
+        --batch-size $BATCH_SIZE \
+        --embeddings-dim $EMBEDDINGS_DIM \
+        --dataset $DATASET \
+        --dataset-split valid \
+        --projection-matrix $PROJECTION_MATRIX \
+        --gradients-layers $LAYER_PATH \
+        --output-path $OUTPUT_DIR/kl-valid.h5
+done

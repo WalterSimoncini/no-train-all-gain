@@ -1,0 +1,7 @@
+conda activate grady
+
+python $PWD/tools/imagenet100.py \
+    --num-proc 18 \
+    --cache-dir /scratch-shared/$USER/cache \
+    --root-dir /scratch-shared/$USER/cache/imagenet100 \
+    --output-folder /scratch-shared/$USER/cache/imagenet100-hf \

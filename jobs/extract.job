@@ -1,0 +1,31 @@
+conda activate grady
+
+BATCH_SIZE=64
+IMAGE_SIZE=224
+
+MODEL_TYPES=(vit-s16 vit-b16 vit-b32 vit-l16)
+DATASETS=(textures cifar10 cifar100 flowers102 food101 aircraft cub-200 pets cars imagenet-1k eurosat)
+
+for BACKBONE_NAME in "${MODEL_TYPES[@]}"; do
+    for DATASET in "${DATASETS[@]}"; do
+        mkdir -p /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME
+
+        python $PWD/extract_features.py \
+            --output-file /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/train.h5 \
+            --batch-size $BATCH_SIZE \
+            --dataset $DATASET \
+            --dataset-split train \
+            --model $BACKBONE_NAME \
+            --cache-dir /scratch-shared/$USER/cache \
+            --input-size $IMAGE_SIZE
+
+        python $PWD/extract_features.py \
+            --output-file /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/test.h5 \
+            --batch-size $BATCH_SIZE \
+            --dataset $DATASET \
+            --dataset-split test \
+            --model $BACKBONE_NAME \
+            --cache-dir /scratch-shared/$USER/cache \
+            --input-size $IMAGE_SIZE
+    done
+done

@@ -1,0 +1,81 @@
+conda activate grady
+
+BATCH_SIZE=8
+INPUT_SIZE=224
+TEMPERATURE=15
+LATENT_DIM=768
+
+DATASETS=(oxford-landmarks paris-landmarks)
+
+MODEL_TYPES=(
+    dino_vitb16
+    dinov2_vitb14
+    clip-vit-b16
+    eva-clip-vit-b16
+)
+
+BACKBONE_NAMES=(
+    dino_vitb16
+    dinov2_vitb14
+    clip-vit-b16
+    eva-clip-vit-b16
+)
+
+PROJECTION_MATRICES=(
+    attn_proj_matrix.pth
+    attn_proj_matrix.pth
+    attn_proj_matrix.pth
+    attn_proj_matrix.pth
+)
+
+LAYER_PATHS=(
+    backbone.blocks.11.attn.proj:attn_proj
+    backbone.blocks.11.attn.proj:attn_proj
+    backbone.blocks.11.attn.proj:attn_proj
+    backbone.blocks.11.attn.proj:attn_proj
+)
+
+for i in "${!MODEL_TYPES[@]}"; do
+    # Configure backbone variables
+    MODEL_TYPE=${MODEL_TYPES[i]}
+    LAYER_PATH=${LAYER_PATHS[i]}
+    BACKBONE_NAME=${BACKBONE_NAMES[i]}
+    PROJECTION_MATRIX=${PROJECTION_MATRICES[i]}
+
+    echo "$MODEL_TYPE, $LAYER_PATH, $BACKBONE_NAME, $PROJECTION_MATRIX"
+
+    # Extract gradients for all datasets
+    for DATASET in "${DATASETS[@]}"; do
+        mkdir -p /scratch-shared/$USER/$DATASET/$BACKBONE_NAME
+
+        python $PWD/grads_kl.py \
+            --seed 42 \
+            --temperature $TEMPERATURE \
+            --latent-dim $LATENT_DIM \
+            --use-fp16 \
+            --input-size $INPUT_SIZE \
+            --batch-size $BATCH_SIZE \
+            --model $MODEL_TYPE \
+            --dataset $DATASET \
+            --dataset-split train \
+            --cache-dir /scratch-shared/$USER/cache \
+            --projection-matrix /scratch-shared/$USER/$PROJECTION_MATRIX \
+            --gradients-layers $LAYER_PATH \
+            --output-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-train.h5
+
+        python $PWD/grads_kl.py \
+            --seed 42 \
+            --temperature $TEMPERATURE \
+            --latent-dim $LATENT_DIM \
+            --use-fp16 \
+            --input-size $INPUT_SIZE \
+            --batch-size $BATCH_SIZE \
+            --model $MODEL_TYPE \
+            --dataset $DATASET \
+            --dataset-split test \
+            --cache-dir /scratch-shared/$USER/cache \
+            --projection-matrix /scratch-shared/$USER/$PROJECTION_MATRIX \
+            --gradients-layers $LAYER_PATH \
+            --output-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-query.h5
+    done
+done

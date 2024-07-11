@@ -1,0 +1,7 @@
+conda activate grady
+
+python $PWD/tools/pets.py \
+    --num-proc 18 \
+    --cache-dir /scratch-shared/$USER/cache \
+    --root-dir /scratch-shared/$USER/cache/pets/ \
+    --output-folder /scratch-shared/$USER/cache/pets-hf

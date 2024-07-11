@@ -1,0 +1,38 @@
+conda activate grady
+
+BATCH_SIZE=32
+IMAGE_SIZE=224
+
+DATASETS=(oxford-landmarks paris-landmarks)
+BACKBONES=(
+    vit-b16
+    dino_vitb16
+    dinov2_vitb14
+    clip-vit-b16
+    eva-clip-vit-b16
+)
+
+for BACKBONE_NAME in "${MODEL_TYPES[@]}"; do
+    for DATASET in "${DATASETS[@]}"; do
+        mkdir -p /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME
+
+        python $PWD/extract_features.py \
+            --output-file /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/train.h5 \
+            --batch-size $BATCH_SIZE \
+            --dataset $DATASET \
+            --dataset-split train \
+            --model $BACKBONE_NAME \
+            --cache-dir /scratch-shared/$USER/cache \
+            --input-size $IMAGE_SIZE
+
+        python $PWD/extract_features.py \
+            --output-file /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/query.h5 \
+            --batch-size $BATCH_SIZE \
+            --dataset $DATASET \
+            --dataset-split test \
+            --model $BACKBONE_NAME \
+            --cache-dir /scratch-shared/$USER/cache \
+            --input-size $IMAGE_SIZE
+    done
+done
+

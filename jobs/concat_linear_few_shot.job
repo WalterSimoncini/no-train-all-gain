@@ -1,0 +1,107 @@
+conda activate grady
+
+SHOTS=5
+PCA_DIM=512
+GRADIENT_DATASET=attn_proj
+
+DATASETS=(textures aircraft flowers102 cars cub-200 eurosat cifar100 cifar10 pets food101 imagenet-1k)
+
+BACKBONES=(
+    vit-b32
+    vit-b16
+    vit-l16
+    mae-vit-b16
+    dino_vitb16
+    dinov2_vitb14
+    clip-vit-b16
+    eva-clip-vit-b16
+    vit-b16-augreg-in1k 
+    vit-b16-augreg-in21k
+    vit-l16-augreg-in21k
+    vit-b16-mocov3
+)
+
+for BACKBONE_NAME in "${BACKBONES[@]}"; do
+    for DATASET in "${DATASETS[@]}"; do
+        echo "START $DATASET"
+
+        # Create a directory to store the logs
+        mkdir -p /scratch-shared/$USER/logs/linear/$BACKBONE_NAME/$SHOTS-shots
+
+        python $PWD/train_linear_concat_grads.py \
+            --normalize \
+            --normalize-embeddings \
+            --pca-dim $PCA_DIM \
+            --train-size $SHOTS \
+            --train-targets /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/train.h5 \
+            --test-targets /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/test.h5 \
+            --valid-targets /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/valid.h5 \
+            --train-embeddings-datasets \
+            "/scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/train.h5" \
+            --test-embeddings-datasets \
+            "/scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/test.h5" \
+            --valid-embeddings-datasets \
+            "/scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/valid.h5" \
+            --train-datasets \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-train.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/dino-train.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-train.h5:$GRADIENT_DATASET" \
+            --test-datasets \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-test.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/dino-test.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-test.h5:$GRADIENT_DATASET" \
+            --valid-datasets \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-valid.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/dino-valid.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-valid.h5:$GRADIENT_DATASET" \
+            --logs-output-path /scratch-shared/$USER/logs/linear/$BACKBONE_NAME/$SHOTS-shots/$DATASET.json
+
+        echo "END $DATASET"
+    done
+done
+
+PCA_DIM=384
+
+BACKBONES=(
+    vit-s16
+    vit-s16-augreg-in21k
+)
+
+for BACKBONE_NAME in "${BACKBONES[@]}"; do
+    for DATASET in "${DATASETS[@]}"; do
+        echo "START $DATASET"
+
+        # Create a directory to store the logs
+        mkdir -p /scratch-shared/$USER/logs/linear/$BACKBONE_NAME/$SHOTS-shots
+
+        python $PWD/train_linear_concat_grads.py \
+            --normalize \
+            --normalize-embeddings \
+            --pca-dim $PCA_DIM \
+            --train-size $SHOTS \
+            --train-targets /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/train.h5 \
+            --test-targets /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/test.h5 \
+            --valid-targets /scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/valid.h5 \
+            --train-embeddings-datasets \
+            "/scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/train.h5" \
+            --test-embeddings-datasets \
+            "/scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/test.h5" \
+            --valid-embeddings-datasets \
+            "/scratch-shared/$USER/embeddings/$DATASET/$BACKBONE_NAME/valid.h5" \
+            --train-datasets \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-train.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/dino-train.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-train.h5:$GRADIENT_DATASET" \
+            --test-datasets \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-test.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/dino-test.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-test.h5:$GRADIENT_DATASET" \
+            --valid-datasets \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/kl-valid.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/dino-valid.h5:$GRADIENT_DATASET" \
+            "/scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-valid.h5:$GRADIENT_DATASET" \
+            --logs-output-path /scratch-shared/$USER/logs/linear/$BACKBONE_NAME/$SHOTS-shots/$DATASET.json
+
+        echo "END $DATASET"
+    done
+done

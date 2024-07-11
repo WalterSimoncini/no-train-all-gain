@@ -1,0 +1,59 @@
+conda activate grady
+
+BATCH_SIZE=16
+TEMPERATURE=0.1
+# Originally 3000, but must be lower than the number of
+# examples in the dataset (e.g. 500 for textures)
+NUM_PROTOTYPES=3000
+
+DATASETS=(imagenet-100)
+
+MODEL_TYPE=vit-b16
+BACKBONE_NAME=vit-b16
+PROJECTION_MATRIX=attn_proj_matrix.pth
+GRADIENTS_LAYER=backbone.encoder.layers.encoder_layer_11.self_attention.out_proj:attn_proj
+
+for DATASET in "${DATASETS[@]}"; do
+    mkdir -p /scratch-shared/$USER/$DATASET/$BACKBONE_NAME
+
+    python $PWD/grads_deepcluster.py \
+        --use-fp16 \
+        --is-train \
+        --model $MODEL_TYPE \
+        --num-crops 2 6 \
+        --crops-sizes 224 224 \
+        --min-scale-crops 0.14 0.05 \
+        --max-scale-crops 1.0 0.14 \
+        --crops-for-assignment 0 1 \
+        --temperature $TEMPERATURE \
+        --latent-dim 128 \
+        --num-prototypes $NUM_PROTOTYPES $NUM_PROTOTYPES $NUM_PROTOTYPES \
+        --batch-size $BATCH_SIZE \
+        --dataset $DATASET \
+        --dataset-split train \
+        --cache-dir /scratch-shared/$USER/cache \
+        --projection-matrix /scratch-shared/$USER/$PROJECTION_MATRIX \
+        --output-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/deepcluster-train.h5 \
+        --gradients-layers $GRADIENTS_LAYER \
+        --clusters-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/centroids.pth
+
+    python $PWD/grads_deepcluster.py \
+        --use-fp16 \
+        --model $MODEL_TYPE \
+        --num-crops 2 6 \
+        --crops-sizes 224 224 \
+        --min-scale-crops 0.14 0.05 \
+        --max-scale-crops 1.0 0.14 \
+        --crops-for-assignment 0 1 \
+        --temperature $TEMPERATURE \
+        --latent-dim 128 \
+        --num-prototypes $NUM_PROTOTYPES $NUM_PROTOTYPES $NUM_PROTOTYPES \
+        --batch-size $BATCH_SIZE \
+        --dataset $DATASET \
+        --dataset-split test \
+        --cache-dir /scratch-shared/$USER/cache \
+        --projection-matrix /scratch-shared/$USER/$PROJECTION_MATRIX \
+        --output-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/deepcluster-test.h5 \
+        --gradients-layers $GRADIENTS_LAYER \
+        --clusters-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/centroids.pth
+done

@@ -1,0 +1,82 @@
+conda activate grady
+
+DATASETS=(textures cifar10 cifar100 flowers102 food101 aircraft cub-200 pets cars imagenet-1k eurosat)
+
+NUM_VIEWS=4
+BATCH_SIZE=36 # Used for the ViT-S, should also work for some larger models
+LATENT_DIM=96
+STRIDE_SCALE=6
+INPUT_SIZE=224
+N_NEGATIVES=256
+DATA_AUGMENTATION=patchify
+
+MODEL_TYPES=(vit-s16 vit-b16 vit-b32 vit-l16)
+BACKBONE_NAMES=(vit-s16 vit-b16 vit-b32 vit-l16)
+
+PROJECTION_MATRICES=(
+    attn_proj_matrix_small.pth
+    attn_proj_matrix.pth
+    attn_proj_matrix.pth
+    attn_proj_vit_large.pth
+)
+
+LAYER_PATHS=(
+    backbone.blocks.11.attn.proj:attn_proj
+    backbone.encoder.layers.encoder_layer_11.self_attention.out_proj:attn_proj
+    backbone.encoder.layers.encoder_layer_11.self_attention.out_proj:attn_proj
+    backbone.encoder.layers.encoder_layer_23.self_attention.out_proj:attn_proj
+)
+
+for i in "${!MODEL_TYPES[@]}"; do
+    # Configure backbone variables
+    MODEL_TYPE=${MODEL_TYPES[i]}
+    LAYER_PATH=${LAYER_PATHS[i]}
+    BACKBONE_NAME=${BACKBONE_NAMES[i]}
+    PROJECTION_MATRIX=${PROJECTION_MATRICES[i]}
+
+    for DATASET in "${DATASETS[@]}"; do
+        mkdir -p /scratch-shared/$USER/$DATASET/$BACKBONE_NAME
+
+        python $PWD/grads_simclr.py \
+            --seed 42 \
+            --use-fp16 \
+            --input-size $INPUT_SIZE \
+            --latent-dim $LATENT_DIM \
+            --stride-scale $STRIDE_SCALE \
+            --batch-size $BATCH_SIZE \
+            --model $MODEL_TYPE \
+            --n-proj-layers 1 \
+            --comparison-batch-dataset $DATASET \
+            --comparison-batch-dataset-split train \
+            --comparison-batch-size $N_NEGATIVES \
+            --dataset $DATASET \
+            --dataset-split train \
+            --cache-dir /scratch-shared/$USER/cache \
+            --projection-matrix /scratch-shared/$USER/$PROJECTION_MATRIX \
+            --augmentation-type $DATA_AUGMENTATION \
+            --n-views $NUM_VIEWS \
+            --gradients-layers $LAYER_PATH \
+            --output-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-train.h5
+
+        python $PWD/grads_simclr.py \
+            --seed 42 \
+            --use-fp16 \
+            --input-size $INPUT_SIZE \
+            --latent-dim $LATENT_DIM \
+            --stride-scale $STRIDE_SCALE \
+            --batch-size $BATCH_SIZE \
+            --model $MODEL_TYPE \
+            --n-proj-layers 1 \
+            --comparison-batch-dataset $DATASET \
+            --comparison-batch-dataset-split train \
+            --comparison-batch-size $N_NEGATIVES \
+            --dataset $DATASET \
+            --dataset-split test \
+            --cache-dir /scratch-shared/$USER/cache \
+            --projection-matrix /scratch-shared/$USER/$PROJECTION_MATRIX \
+            --augmentation-type $DATA_AUGMENTATION \
+            --n-views $NUM_VIEWS \
+            --gradients-layers $LAYER_PATH \
+            --output-path /scratch-shared/$USER/$DATASET/$BACKBONE_NAME/simclr-test.h5
+    done
+done

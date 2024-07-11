@@ -1,0 +1,67 @@
+source activate ssast
+
+DATASETS=(esc-50 speech-commands)
+
+NUM_VIEWS=16
+BATCH_SIZE=1
+LATENT_DIM=768
+EMBEDDINGS_DIM=768
+COMPARISON_BATCH_SIZE=64
+BACKBONE_NAME=patch-ssast
+PROJECTION_MATRIX=/scratch-shared/$USER/attn_proj_matrix.pth
+LAYER_PATH=backbone.v.blocks.11.attn.proj:attn_proj
+
+DATASET_CACHE_DIR=/scratch-shared/$USER/cache/
+OUTPUT_DIR=/scratch-shared/$USER/$DATASET/$BACKBONE_NAME
+
+for DATASET in "${DATASETS[@]}"; do
+    mkdir -p $OUTPUT_DIR
+
+    srun python $PWD/grads_simclr.py \
+        --seed 42 \
+        --cache-dir $DATASET_CACHE_DIR \
+        --num-views $NUM_VIEWS \
+        --comparison-batch-size $COMPARISON_BATCH_SIZE \
+        --latent-dim $LATENT_DIM \
+        --use-fp16 \
+        --model $BACKBONE_NAME \
+        --batch-size $BATCH_SIZE \
+        --embeddings-dim $EMBEDDINGS_DIM \
+        --dataset $DATASET \
+        --dataset-split train \
+        --projection-matrix $PROJECTION_MATRIX \
+        --gradients-layers $LAYER_PATH \
+        --output-path $OUTPUT_DIR/simclr-train.h5
+
+    srun python $PWD/grads_simclr.py \
+        --seed 42 \
+        --cache-dir $DATASET_CACHE_DIR \
+        --num-views $NUM_VIEWS \
+        --comparison-batch-size $COMPARISON_BATCH_SIZE \
+        --latent-dim $LATENT_DIM \
+        --use-fp16 \
+        --model $BACKBONE_NAME \
+        --batch-size $BATCH_SIZE \
+        --embeddings-dim $EMBEDDINGS_DIM \
+        --dataset $DATASET \
+        --dataset-split test \
+        --projection-matrix $PROJECTION_MATRIX \
+        --gradients-layers $LAYER_PATH \
+        --output-path $OUTPUT_DIR/simclr-test.h5
+
+    srun python $PWD/grads_simclr.py \
+        --seed 42 \
+        --cache-dir $DATASET_CACHE_DIR \
+        --num-views $NUM_VIEWS \
+        --comparison-batch-size $COMPARISON_BATCH_SIZE \
+        --latent-dim $LATENT_DIM \
+        --use-fp16 \
+        --model $BACKBONE_NAME \
+        --batch-size $BATCH_SIZE \
+        --embeddings-dim $EMBEDDINGS_DIM \
+        --dataset $DATASET \
+        --dataset-split valid \
+        --projection-matrix $PROJECTION_MATRIX \
+        --gradients-layers $LAYER_PATH \
+        --output-path $OUTPUT_DIR/simclr-valid.h5
+done

@@ -1,0 +1,9 @@
+torch==2.3.0
+torchaudio==2.3.0
+torchvision==0.18.0
+transformers==4.40.2
+datasets==2.19.1
+h5py==3.11.0
+sentencepiece==0.2.0
+nlpaug==1.1.11
+scikit-learn==1.5.0
