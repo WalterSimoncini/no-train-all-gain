@@ -5,11 +5,11 @@
 1. [QUVA Lab](https://ivi.fnwi.uva.nl/quva/), University of Amsterdam.
 2. [valeo.ai](https://www.valeo.com/en/valeo-ai/), Paris, France.
 
-This repository contains the image classification and retrieval experiments for our paper [No Train, all Gain: Self-Supervised Gradients Improve Deep Frozen Representations](https://fungi.ashita.nl/).
+This repository contains the experiments for our paper [No Train, all Gain: Self-Supervised Gradients Improve Deep Frozen Representations](https://fungi.ashita.nl/).
 
 > Our paper introduces FUNGI: **F**eatures from **UN**supervised **G**rad**I**ents, a method to enhance the features of vision encoders by leveraging self-supervised gradients. Our method is simple: given any pretrained model, we first compute gradients from various self-supervised objectives for each input. These are projected to a lower dimension and then concatenated with the model's embedding. The resulting features are evaluated  on k-nearest neighbor classification over 11 datasets from vision, 5 from natural language processing, and 2 from audio. Across backbones spanning various sizes and pretraining strategies, FUNGI features provide consistent performance improvements over the embeddings. We also show that using FUNGI features can benefit linear classification and image retrieval, and that they significantly improve the retrieval-based in-context scene understanding abilities of pretrained models, for example improving upon DINO by +17\% for semantic segmentation — without any training.
 
-Experiments for other modalities and tasks are in their corresponding folders:
+The root folders contains experiments for the vision modality (k-nn classification, retrieval and linear classification). Experiments for other modalities and tasks are in their corresponding folders:
 
 - `fungi-text`: k-nearest neighbor text classification using FUNGI obtained from text encoders.
 - `fungi-ssast`: k-nearest neighbor audio classification using FUNGI obtained from an SSAST backbone.
