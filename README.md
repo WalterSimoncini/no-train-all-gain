@@ -205,3 +205,19 @@ pytest
 ```
 
 The gradient sanity check tests should be run on CPU, as running them on a GPU may produce slighly different gradients depending on the batch size and cause the test to fail.
+
+## Reference
+
+If you found our work useful please cite us as follows:
+
+```
+@misc{simoncini2024fungi,
+      title={No Train, all Gain: Self-Supervised Gradients Improve Deep Frozen Representations}, 
+      author={Walter Simoncini and Spyros Gidaris and Andrei Bursuc and Yuki M. Asano},
+      year={2024},
+      eprint={2407.10964},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2407.10964}, 
+}
+```
