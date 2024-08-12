@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     # Model arguments
     parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--checkpoint", default=None, type=str, help="Path to the RotNet checkpoint. If not specified a raw model will be loaded")
+    parser.add_argument("--checkpoint", default=None, type=str, help="Path to a model checkpoint. NOTE: we always use pretrained models regardless of whether a checkpoint is specified")
     parser.add_argument("--model", type=ModelType, choices=list(ModelType), default=ModelType.VIT_B_16, help="The type of the supervised backbone")
     parser.add_argument("--use-fp16", action=argparse.BooleanOptionalAction, default=False, help="Whether to run the model in fp16")
     parser.add_argument("--latent-dim", type=int, default=768, help="The output dimensionality of the KL head")

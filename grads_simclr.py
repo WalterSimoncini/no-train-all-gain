@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
     # Model arguments
     parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--checkpoint", default=None, type=str, help="Path to the RotNet checkpoint. If not specified a raw model will be loaded")
+    parser.add_argument("--checkpoint", default=None, type=str, help="Path to a model checkpoint. NOTE: we always use pretrained models regardless of whether a checkpoint is specified")
     parser.add_argument("--model", type=ModelType, choices=list(ModelType), default=ModelType.DINO_VIT_16_B, help="The SimCLR backbone (e.g. DINO, CLIP, ...)")
     parser.add_argument("--n-proj-layers", type=int, default=1, help="The number of layers in the projection head. A single projection layer will result in a nonlinearity-free head. If 2+ layers are used they will have nonlinearities in between")
     parser.add_argument("--latent-dim", type=int, default=96, help="The dimensionality of latent representations used to compute the loss")

@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 from src.utils import get_device
 from src.models import get_model
 from src.datasets import load_dataset
-from src.models.rotnet import RotNetType
 from src.utils.models import model_feature_dim
 from src.utils.logging import configure_logging
 from src.enums import ModelType, DatasetType, DatasetSplit
@@ -19,10 +18,7 @@ def main(args):
     batch_size = args.batch_size
     model, transform = get_model(
         type_=args.model,
-        cache_dir=args.cache_dir,
-        n_classes=args.n_classes,
-        pretrained=args.pretrained,
-        rotnet_type=args.rotnet_type
+        cache_dir=args.cache_dir
     )
 
     ds = load_dataset(
@@ -46,16 +42,12 @@ def main(args):
     device = get_device()
 
     logging.info(f"loaded model of class {model.__class__.__name__}")
-    logging.info(f"the model arguments were (type: {args.model}, pretrained: {args.pretrained}, rotnet: {args.rotnet_type})")
+    logging.info(f"the model type was: {args.model}")
     logging.info(f"the model is {model}")
 
     # Load the model from a checkpoint if specified
     if args.checkpoint:
         model.load_state_dict(torch.load(args.checkpoint, map_location=device))
-
-    # If we are working with a RotNet remove the heads
-    if args.model == ModelType.ROT_NET:
-        model = model.model
 
     model = model.to(device)
     model.eval()
@@ -95,11 +87,6 @@ if __name__ == "__main__":
     # https://github.com/facebookresearch/dino/tree/main#pretrained-models-on-pytorch-hub
     parser.add_argument("--model", type=ModelType, choices=list(ModelType), required=True, help="The type of model to use as a feature extractor")
     parser.add_argument("--checkpoint", default=None, type=str, help="Path to a model checkpoint. If not specified the raw model will be loaded")
-
-    # RotNet arguments (only relevant if model = "rotnet")
-    parser.add_argument("--n-classes", default=10, type=int, help="Number of classes in the dataset")
-    parser.add_argument("--rotnet-type", type=RotNetType, choices=list(RotNetType), default=None, help="The RotNet type if extracting deep features from a RotNet")
-    parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=False, help="Whether to load a pretrained feature extractor or not (only valid for some models)")
 
     parser.add_argument("--dataset", type=DatasetType, choices=list(DatasetType), default=DatasetType.CIFAR10, help="The dataset to extract features from")
     parser.add_argument("--dataset-split", type=DatasetSplit, choices=list(DatasetSplit), required=True, help="The dataset split")
